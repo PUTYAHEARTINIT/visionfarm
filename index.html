@@ -732,6 +732,148 @@ section { position: relative; }
 }
 
 /* ---- FOUNDER ---- */
+/* ---- FOUNDER PROFILE ---- */
+.founder-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.founder-hero-img {
+  width: 100%;
+  max-height: 500px;
+  object-fit: cover;
+  object-position: center 20%;
+  display: block;
+  border: 1px solid var(--border-glass);
+  filter: grayscale(15%) contrast(1.05);
+}
+
+.founder-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(5,5,7,0.7) 70%, var(--bg-deep) 100%);
+  pointer-events: none;
+}
+
+.founder-hero-text {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  z-index: 2;
+}
+
+.founder-name {
+  font-family: var(--serif);
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 300;
+  color: var(--text-primary);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.founder-title-line {
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 400;
+}
+
+.founder-parent-co {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-top: 6px;
+}
+
+.founder-body {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.founder-body p {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 2;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+  text-align: justify;
+}
+
+.founder-body p:last-child {
+  margin-bottom: 0;
+}
+
+.founder-body p::first-line {
+  color: var(--text-primary);
+}
+
+.founder-divider {
+  width: 40px;
+  height: 1px;
+  background: rgba(201,165,92,0.3);
+  margin: 48px auto;
+}
+
+.founder-quote-block {
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 48px 0;
+}
+
+.founder-quote-block blockquote {
+  font-family: var(--serif);
+  font-size: clamp(22px, 2.5vw, 32px);
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.founder-quote-block blockquote em {
+  color: var(--gold);
+  font-style: normal;
+}
+
+.founder-secondary-img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  object-position: center 25%;
+  display: block;
+  border: 1px solid var(--border-glass);
+  filter: grayscale(15%) contrast(1.05);
+  margin-top: 60px;
+}
+
+.founder-attribution {
+  margin-top: 32px;
+  text-align: center;
+}
+.founder-attribution .name {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.founder-attribution .role {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+
+/* Legacy support */
 .founder-section {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -751,26 +893,6 @@ section { position: relative; }
   border-left: 2px solid rgba(201,165,92,0.2);
 }
 .founder-text blockquote em { color: var(--gold); font-style: normal; }
-
-.founder-attribution {
-  margin-top: 32px;
-  padding-left: 32px;
-}
-.founder-attribution .name {
-  font-family: var(--sans);
-  font-size: 14px;
-  font-weight: 400;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text-primary);
-}
-.founder-attribution .role {
-  font-family: var(--sans);
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin-top: 4px;
-  letter-spacing: 1px;
-}
 
 .founder-visual {
   display: flex;
@@ -939,6 +1061,11 @@ footer {
   .nav-links { display: none; }
   .mockup-content { grid-template-columns: 1fr; }
   .mockup-sidebar { display: none; }
+  .founder-hero-img { max-height: 340px; }
+  .founder-hero-text { bottom: 24px; }
+  .founder-name { letter-spacing: 0; }
+  .founder-body p { font-size: 14px; line-height: 1.85; text-align: left; }
+  .founder-secondary-img { max-height: 300px; margin-top: 40px; }
 }
 
 /* Noise overlay */
@@ -972,6 +1099,7 @@ footer {
     <a href="#systems">Systems</a>
     <a href="#platform">Platform</a>
     <a href="#access">Access</a>
+    <a href="#founder">Founder</a>
     <a href="#farmed">Portfolio</a>
     <a href="#enter" class="nav-cta">Enter VisionFarm</a>
   </div>
@@ -1338,27 +1466,59 @@ footer {
 <div class="divider"></div>
 
 <!-- FOUNDER -->
-<section class="section-spacer">
+<section id="founder" class="section-spacer" style="position:relative;">
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(201,165,92,0.015),transparent);pointer-events:none;"></div>
   <div class="container">
-    <div class="founder-section">
-      <div class="founder-text reveal">
-        <p class="section-label">Founder Vision</p>
-        <blockquote>
-          "The future belongs to those who can <em>see</em> what doesn't yet exist — and have the systems to bring it into being. VisionFarm is the bridge between imagination and infrastructure."
-        </blockquote>
-        <div class="founder-attribution">
-          <div class="name">The VisionFarm Collective</div>
-          <div class="role">Founding Team</div>
-        </div>
-      </div>
-      <div class="founder-visual reveal reveal-delay-2">
-        <div class="founder-sigil">
-          <div class="sigil-ring"></div>
-          <div class="sigil-ring"></div>
-          <div class="sigil-ring"></div>
-          <div class="sigil-ring"></div>
-        </div>
-      </div>
+    <p class="section-label reveal" style="text-align:center;">The Architect</p>
+    <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">Meet the <em>Founder</em></h2>
+  </div>
+
+  <!-- Hero Photo -->
+  <div class="founder-hero reveal reveal-delay-2" style="margin-top:60px;">
+    <img src="akira1.png" alt="Akira Hoshin — Founder & CEO" class="founder-hero-img">
+    <div class="founder-hero-overlay"></div>
+    <div class="founder-hero-text">
+      <div class="founder-name">Akira Hoshin</div>
+      <div class="founder-title-line">Founder & Chief Executive Officer</div>
+      <div class="founder-parent-co">DiviDev — Parent Company of Vision Farm</div>
+    </div>
+  </div>
+
+  <!-- Bio -->
+  <div class="container" style="margin-top:80px;">
+    <div class="founder-body reveal">
+      <p>Akira Hoshin is widely regarded as one of the most forward-thinking technology architects of his generation, known for designing large-scale innovation ecosystems that connect artificial intelligence, capital formation, and distributed computing infrastructure. Operating with a disciplined, systems-level approach to problem solving, Hoshin has built his reputation not through publicity, but through the creation of technologies and venture platforms that quietly shape emerging markets.</p>
+
+      <p>Born into a multicultural lineage that blended Japanese discipline with a global cultural perspective, Akira demonstrated exceptional analytical ability early in life, developing an unusual capacity for pattern recognition, strategic modeling, and advanced computational thinking. By his early years in the technology sector, he had already contributed to experimental distributed systems, autonomous software frameworks, and predictive intelligence tools that reflected a long-horizon view of how artificial intelligence would transform global industry.</p>
+
+      <div class="founder-divider"></div>
+
+      <p>Hoshin later founded <strong style="color:var(--gold);font-weight:400;">DiviDev</strong> (Divine Developments), an advanced innovation company dedicated to incubating foundational technologies and launching high-impact ventures across artificial intelligence, infrastructure intelligence, and global digital economies. As the parent company behind multiple technology initiatives, DiviDev serves as the originating research, development, and commercialization engine responsible for bringing new systems to market.</p>
+
+      <p>Among DiviDev's flagship ventures is <strong style="color:var(--gold);font-weight:400;">Vision Farm</strong>, a next-generation venture incubation platform designed to identify, build, and scale transformative artificial intelligence companies. Under Hoshin's leadership, Vision Farm operates as a strategic growth environment where emerging technologies are developed into scalable enterprises supported by capital, infrastructure, and advanced technical guidance. The platform reflects his long-standing philosophy that the future of innovation belongs to organizations capable of combining research, venture strategy, and technological execution within a single integrated ecosystem.</p>
+    </div>
+
+    <!-- Quote -->
+    <div class="founder-quote-block reveal">
+      <blockquote>
+        "The future belongs to those who can <em>see</em> what doesn't yet exist — and have the systems to bring it into being."
+      </blockquote>
+    </div>
+
+    <!-- Secondary Photo -->
+    <div class="reveal">
+      <img src="akira2.png" alt="Akira Hoshin" class="founder-secondary-img">
+    </div>
+
+    <!-- Closing Bio -->
+    <div class="founder-body reveal" style="margin-top:60px;">
+      <p>Despite his growing influence across the global technology landscape, Akira Hoshin remains known for his disciplined privacy and quiet operational style, focusing his public presence primarily on strategic insights, institutional partnerships, and long-term technological forecasting. As Founder and CEO of DiviDev and the strategic architect behind Vision Farm, his mission continues to center on building the foundational systems, venture platforms, and intelligence infrastructure that will power the next era of global technological development.</p>
+    </div>
+
+    <!-- Attribution -->
+    <div class="founder-attribution reveal" style="margin-top:48px;">
+      <div class="name">Akira Hoshin</div>
+      <div class="role">Founder & CEO, DiviDev · Architect of Vision Farm</div>
     </div>
   </div>
 </section>
