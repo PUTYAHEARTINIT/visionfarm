@@ -1,0 +1,25 @@
+{
+  "name": "visionfarm-automation",
+  "version": "1.0.0",
+  "description": "VisionFarm automation engine — inquiries, email sequences, SMS, Instagram DM",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "n8n": "n8n start",
+    "all": "concurrently \"npm run dev\" \"npm run n8n\""
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "twilio": "^5.4.0",
+    "resend": "^4.1.0",
+    "openai": "^4.77.0",
+    "better-sqlite3": "^11.7.0",
+    "helmet": "^8.0.0",
+    "express-rate-limit": "^7.4.1",
+    "concurrently": "^9.1.0"
+  }
+}

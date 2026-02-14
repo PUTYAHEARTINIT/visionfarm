@@ -1,0 +1,5 @@
+node_modules/
+.env
+visionfarm.db
+visionfarm.db-wal
+visionfarm.db-shm
