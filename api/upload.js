@@ -5,7 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 // Load VisionFarm logo for watermarking
-const LOGO_PATH = join(process.cwd(), 'logo.png');
+const LOGO_PATH = join(process.cwd(), 'logo-watermark.png');
 
 export const config = {
   api: {
@@ -65,57 +65,84 @@ async function parseMultipartForm(req) {
   });
 }
 
-// Watermark PDF with logo at 25% opacity
+// Watermark PDF with tiled logo at 25% opacity
 async function watermarkPDF(pdfBuffer, logoPath) {
   const pdfDoc = await PDFDocument.load(pdfBuffer);
   const logoBytes = readFileSync(logoPath);
   const logoImage = await pdfDoc.embedPng(logoBytes);
 
   const pages = pdfDoc.getPages();
-  const logoDims = logoImage.scale(0.3); // Scale logo to 30% of original size
+  const logoScale = 0.2; // Scale logo to 20% of original size
+  const logoDims = logoImage.scale(logoScale);
 
   for (const page of pages) {
     const { width, height } = page.getSize();
 
-    // Center logo on page with 25% opacity
-    page.drawImage(logoImage, {
-      x: (width - logoDims.width) / 2,
-      y: (height - logoDims.height) / 2,
-      width: logoDims.width,
-      height: logoDims.height,
-      opacity: 0.25,
-    });
+    // Calculate tile spacing (diagonal pattern)
+    const spacingX = logoDims.width * 2;
+    const spacingY = logoDims.height * 2;
+
+    // Tile the logo across the page in a diagonal pattern
+    for (let y = -spacingY; y < height + spacingY; y += spacingY) {
+      for (let x = -spacingX; x < width + spacingX; x += spacingX) {
+        page.drawImage(logoImage, {
+          x: x,
+          y: y,
+          width: logoDims.width,
+          height: logoDims.height,
+          opacity: 0.25,
+        });
+      }
+    }
   }
 
   return await pdfDoc.save();
 }
 
-// Watermark image with logo at 25% opacity
+// Watermark image with tiled logo at 25% opacity
 async function watermarkImage(imageBuffer, logoPath) {
-  const logo = await sharp(logoPath)
-    .resize(300) // Resize logo to 300px width
-    .toBuffer();
-
-  // Get image dimensions
   const metadata = await sharp(imageBuffer).metadata();
 
-  // Composite logo in center with 25% opacity
+  // Resize logo to reasonable size (200px width)
+  const logo = await sharp(logoPath)
+    .resize(200)
+    .toBuffer();
+
+  const logoMeta = await sharp(logo).metadata();
+
+  // Create a tiled pattern by repeating the logo
+  const tilesX = Math.ceil(metadata.width / (logoMeta.width * 2)) + 1;
+  const tilesY = Math.ceil(metadata.height / (logoMeta.height * 2)) + 1;
+
+  const composites = [];
+
+  // Create tiled watermark pattern
+  for (let y = 0; y < tilesY; y++) {
+    for (let x = 0; x < tilesX; x++) {
+      composites.push({
+        input: await sharp(logo)
+          .ensureAlpha()
+          .modulate({ brightness: 1 })
+          .composite([{
+            input: Buffer.from([255, 255, 255, 64]), // 25% opacity
+            raw: {
+              width: logoMeta.width,
+              height: logoMeta.height,
+              channels: 4
+            },
+            tile: true,
+            blend: 'dest-in'
+          }])
+          .toBuffer(),
+        top: y * logoMeta.height * 2,
+        left: x * logoMeta.width * 2,
+      });
+    }
+  }
+
+  // Apply all watermark tiles to the image
   const watermarked = await sharp(imageBuffer)
-    .composite([{
-      input: await sharp(logo)
-        .composite([{
-          input: Buffer.from([255, 255, 255, 64]), // White with 25% opacity (64/255)
-          raw: {
-            width: 1,
-            height: 1,
-            channels: 4
-          },
-          tile: true,
-          blend: 'dest-in'
-        }])
-        .toBuffer(),
-      gravity: 'center'
-    }])
+    .composite(composites)
     .toBuffer();
 
   return watermarked;
