@@ -103,44 +103,54 @@ async function watermarkPDF(pdfBuffer, logoPath) {
 async function watermarkImage(imageBuffer, logoPath) {
   const metadata = await sharp(imageBuffer).metadata();
 
-  // Resize logo to reasonable size (200px width)
-  const logo = await sharp(logoPath)
-    .resize(200)
-    .toBuffer();
+  // Resize logo to reasonable size based on image dimensions
+  const logoSize = Math.min(metadata.width, metadata.height) / 5;
 
-  const logoMeta = await sharp(logo).metadata();
+  // Create logo with 25% opacity
+  const logoWithOpacity = await sharp(logoPath)
+    .resize(Math.floor(logoSize))
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
 
-  // Create a tiled pattern by repeating the logo
-  const tilesX = Math.ceil(metadata.width / (logoMeta.width * 2)) + 1;
-  const tilesY = Math.ceil(metadata.height / (logoMeta.height * 2)) + 1;
+  // Reduce alpha channel to 25%
+  const { data, info } = logoWithOpacity;
+  for (let i = 0; i < data.length; i += info.channels) {
+    if (info.channels === 4) {
+      data[i + 3] = Math.floor(data[i + 3] * 0.25); // Reduce alpha to 25%
+    }
+  }
+
+  const logo = await sharp(data, {
+    raw: {
+      width: info.width,
+      height: info.height,
+      channels: info.channels
+    }
+  }).png().toBuffer();
+
+  const logoMeta = { width: info.width, height: info.height };
+
+  // Create tiled watermark pattern
+  const spacing = 1.5; // Space between logos
+  const tilesX = Math.ceil(metadata.width / (logoMeta.width * spacing)) + 1;
+  const tilesY = Math.ceil(metadata.height / (logoMeta.height * spacing)) + 1;
 
   const composites = [];
 
-  // Create tiled watermark pattern
+  // Add logo tiles in a diagonal pattern
   for (let y = 0; y < tilesY; y++) {
     for (let x = 0; x < tilesX; x++) {
       composites.push({
-        input: await sharp(logo)
-          .ensureAlpha()
-          .modulate({ brightness: 1 })
-          .composite([{
-            input: Buffer.from([255, 255, 255, 64]), // 25% opacity
-            raw: {
-              width: logoMeta.width,
-              height: logoMeta.height,
-              channels: 4
-            },
-            tile: true,
-            blend: 'dest-in'
-          }])
-          .toBuffer(),
-        top: y * logoMeta.height * 2,
-        left: x * logoMeta.width * 2,
+        input: logo,
+        top: Math.floor(y * logoMeta.height * spacing),
+        left: Math.floor(x * logoMeta.width * spacing),
+        blend: 'over'
       });
     }
   }
 
-  // Apply all watermark tiles to the image
+  // Apply watermark tiles to image
   const watermarked = await sharp(imageBuffer)
     .composite(composites)
     .toBuffer();
