@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionFarm Document Preview</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Outfit', -apple-system, sans-serif;
+  background: #050507;
+  color: #e8e6e1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 24px 5%;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo img {
+  height: 40px;
+  opacity: 0.9;
+}
+
+.download-btn {
+  padding: 10px 20px;
+  background: rgba(201,165,92,0.1);
+  border: 1px solid #c9a55c;
+  border-radius: 6px;
+  color: #c9a55c;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.download-btn:hover {
+  background: rgba(201,165,92,0.2);
+  transform: translateY(-1px);
+}
+
+.container {
+  flex: 1;
+  max-width: 1200px;
+  width: 90%;
+  margin: 0 auto;
+  padding: 48px 0;
+}
+
+.doc-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.doc-title {
+  font-size: 32px;
+  font-weight: 500;
+  color: #c9a55c;
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+
+.doc-meta {
+  font-size: 14px;
+  color: rgba(232,230,225,0.5);
+}
+
+.doc-description {
+  font-size: 16px;
+  color: rgba(232,230,225,0.7);
+  margin-top: 16px;
+  line-height: 1.6;
+}
+
+.preview-container {
+  position: relative;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.watermark-notice {
+  background: rgba(201,165,92,0.1);
+  border: 1px solid rgba(201,165,92,0.3);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.watermark-notice p {
+  font-size: 14px;
+  color: #c9a55c;
+  margin-bottom: 4px;
+}
+
+.watermark-notice small {
+  font-size: 12px;
+  color: rgba(201,165,92,0.7);
+}
+
+#documentDisplay {
+  position: relative;
+  min-height: 600px;
+  background: rgba(255,255,255,0.98);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#pdfCanvas {
+  width: 100%;
+  display: block;
+}
+
+#imageDisplay {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
+}
+
+.watermark-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.watermark-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 48px;
+  font-weight: 700;
+  color: rgba(201,165,92,0.15);
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  white-space: nowrap;
+}
+
+.footer {
+  text-align: center;
+  padding: 32px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 13px;
+  color: rgba(232,230,225,0.4);
+}
+
+.error-message {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.error-message h2 {
+  font-size: 24px;
+  color: #e57373;
+  margin-bottom: 12px;
+}
+
+.error-message p {
+  font-size: 14px;
+  color: rgba(232,230,225,0.5);
+}
+
+.loading {
+  text-align: center;
+  padding: 80px 20px;
+  font-size: 16px;
+  color: rgba(232,230,225,0.7);
+}
+
+@media (max-width: 768px) {
+  .doc-title {
+    font-size: 24px;
+  }
+
+  .watermark-text {
+    font-size: 32px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <img src="logo-nav.png" alt="VisionFarm">
+  </div>
+  <a href="#" class="download-btn" id="downloadBtn" style="display: none;">Request Full Document</a>
+</div>
+
+<div class="container">
+  <div id="content">
+    <div class="loading">Loading document preview...</div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>VisionFarm — Where Vision Becomes Reality</p>
+  <p style="margin-top: 8px; font-size: 11px;">This is a watermarked preview. Contact us for the full document.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+// Get document ID from URL
+const urlParams = new URLSearchParams(window.location.search);
+const docId = urlParams.get('id') || window.location.pathname.split('/').pop();
+
+// Initialize PDF.js
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+function loadDocument() {
+  const content = document.getElementById('content');
+
+  // Get document from localStorage
+  const uploads = JSON.parse(localStorage.getItem('vf_uploads') || '[]');
+  const doc = uploads.find(u => u.id === docId);
+
+  if (!doc) {
+    content.innerHTML = `
+      <div class="error-message">
+        <h2>Document Not Found</h2>
+        <p>The document you're looking for doesn't exist or has been removed.</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Display document info
+  content.innerHTML = `
+    <div class="doc-header">
+      <h1 class="doc-title">${escapeHtml(doc.docTitle)}</h1>
+      <div class="doc-meta">
+        Prepared for ${escapeHtml(doc.clientName)} • ${new Date(doc.uploadDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+      </div>
+      ${doc.description ? `<p class="doc-description">${escapeHtml(doc.description)}</p>` : ''}
+    </div>
+
+    <div class="watermark-notice">
+      <p><strong>Preview Mode</strong></p>
+      <small>This document contains a watermark. Contact VisionFarm for the full version.</small>
+    </div>
+
+    <div class="preview-container">
+      <div id="documentDisplay">
+        <div class="watermark-overlay">
+          <div class="watermark-text">${escapeHtml(doc.clientName)} • PREVIEW</div>
+        </div>
+        <div style="padding: 40px; text-align: center; color: #666;">
+          <p style="margin-bottom: 16px;">📄 ${escapeHtml(doc.fileName)}</p>
+          <p style="font-size: 14px; color: #999;">
+            In a production environment, this would display the actual document<br>
+            with watermark overlay using PDF.js or Canvas API.
+          </p>
+          <p style="margin-top: 24px; font-size: 13px; color: #999;">
+            For now, this is a placeholder demonstrating the preview interface.<br>
+            The full implementation would include file storage (AWS S3, Cloudflare R2)<br>
+            and real-time watermarking.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Show download button
+  const downloadBtn = document.getElementById('downloadBtn');
+  downloadBtn.style.display = 'inline-block';
+  downloadBtn.onclick = (e) => {
+    e.preventDefault();
+    alert('To request the full unwatermarked document, please contact VisionFarm at contact@visionfarm.tech');
+  };
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Load document on page load
+document.addEventListener('DOMContentLoaded', loadDocument);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionFarm Portal - Admin Upload</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Outfit', -apple-system, sans-serif;
+  background: #050507;
+  color: #e8e6e1;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  max-width: 600px;
+  width: 90%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 48px;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.logo img {
+  height: 60px;
+  opacity: 0.9;
+}
+
+h1 {
+  font-size: 24px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #c9a55c;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: rgba(232,230,225,0.5);
+  margin-bottom: 32px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: rgba(232,230,225,0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="file"],
+textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: #e8e6e1;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.3s;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+  outline: none;
+  border-color: #c9a55c;
+  background: rgba(255,255,255,0.08);
+}
+
+input[type="file"] {
+  padding: 16px;
+  cursor: pointer;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.btn {
+  width: 100%;
+  padding: 14px 24px;
+  background: #c9a55c;
+  color: #050507;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn:hover {
+  background: #d4b06d;
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.uploaded-files {
+  margin-top: 40px;
+  padding-top: 40px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.file-item {
+  background: rgba(255,255,255,0.03);
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #e8e6e1;
+}
+
+.file-link {
+  font-size: 12px;
+  color: #c9a55c;
+  text-decoration: none;
+}
+
+.file-link:hover {
+  text-decoration: underline;
+}
+
+#loginForm {
+  display: block;
+}
+
+#uploadForm {
+  display: none;
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.alert-success {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  color: #81c784;
+}
+
+.alert-error {
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  color: #e57373;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo">
+    <img src="logo-nav.png" alt="VisionFarm">
+  </div>
+
+  <!-- Login Form -->
+  <div id="loginForm">
+    <h1>Admin Portal</h1>
+    <p class="subtitle">Enter password to access document upload</p>
+
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="adminPassword" placeholder="Enter admin password">
+    </div>
+
+    <button class="btn" onclick="login()">Access Portal</button>
+  </div>
+
+  <!-- Upload Form (hidden until login) -->
+  <div id="uploadForm">
+    <h1>Upload Documents</h1>
+    <p class="subtitle">Share watermarked documents with clients</p>
+
+    <div id="alertContainer"></div>
+
+    <div class="form-group">
+      <label>Client Name (for watermark)</label>
+      <input type="text" id="clientName" placeholder="e.g., Acme Corp">
+    </div>
+
+    <div class="form-group">
+      <label>Document Title</label>
+      <input type="text" id="docTitle" placeholder="e.g., Q1 Strategy Proposal">
+    </div>
+
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <textarea id="docDescription" placeholder="Brief description of the document..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Upload Document (PDF or Image)</label>
+      <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileSelect()">
+    </div>
+
+    <button class="btn" id="uploadBtn" onclick="uploadDocument()" disabled>Upload & Generate Link</button>
+
+    <div class="uploaded-files" id="uploadedFiles" style="display: none;">
+      <h2 style="font-size: 18px; margin-bottom: 16px;">Recent Uploads</h2>
+      <div id="filesList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Simple password auth (upgrade to real auth later)
+const ADMIN_PASSWORD = 'visionfarm2026';
+
+function login() {
+  const password = document.getElementById('adminPassword').value;
+  if (password === ADMIN_PASSWORD) {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('uploadForm').style.display = 'block';
+    loadUploadedFiles();
+  } else {
+    alert('Incorrect password');
+  }
+}
+
+function handleFileSelect() {
+  const fileInput = document.getElementById('fileInput');
+  const uploadBtn = document.getElementById('uploadBtn');
+  uploadBtn.disabled = !fileInput.files.length;
+}
+
+function showAlert(message, type = 'success') {
+  const container = document.getElementById('alertContainer');
+  container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+  setTimeout(() => container.innerHTML = '', 5000);
+}
+
+function uploadDocument() {
+  const clientName = document.getElementById('clientName').value.trim();
+  const docTitle = document.getElementById('docTitle').value.trim();
+  const docDescription = document.getElementById('docDescription').value.trim();
+  const fileInput = document.getElementById('fileInput');
+
+  if (!clientName || !docTitle || !fileInput.files.length) {
+    showAlert('Please fill in all required fields', 'error');
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const fileId = generateId();
+
+  // In a real implementation, upload to server/storage
+  // For now, simulate upload and generate link
+
+  const uploadData = {
+    id: fileId,
+    clientName,
+    docTitle,
+    description: docDescription,
+    fileName: file.name,
+    uploadDate: new Date().toISOString(),
+    link: `https://visionfarm.tech/view/${fileId}`
+  };
+
+  // Save to localStorage (upgrade to database later)
+  saveUpload(uploadData);
+
+  showAlert(`✅ Document uploaded! Link: ${uploadData.link}`, 'success');
+
+  // Reset form
+  document.getElementById('clientName').value = '';
+  document.getElementById('docTitle').value = '';
+  document.getElementById('docDescription').value = '';
+  fileInput.value = '';
+  document.getElementById('uploadBtn').disabled = true;
+
+  loadUploadedFiles();
+}
+
+function generateId() {
+  return Math.random().toString(36).substring(2, 10);
+}
+
+function saveUpload(data) {
+  const uploads = JSON.parse(localStorage.getItem('vf_uploads') || '[]');
+  uploads.unshift(data);
+  localStorage.setItem('vf_uploads', JSON.stringify(uploads));
+}
+
+function loadUploadedFiles() {
+  const uploads = JSON.parse(localStorage.getItem('vf_uploads') || '[]');
+  const container = document.getElementById('uploadedFiles');
+  const list = document.getElementById('filesList');
+
+  if (uploads.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'block';
+  list.innerHTML = uploads.map(upload => `
+    <div class="file-item">
+      <div>
+        <div class="file-name">${upload.docTitle}</div>
+        <div style="font-size: 12px; color: rgba(232,230,225,0.5); margin-top: 4px;">
+          ${upload.clientName} • ${new Date(upload.uploadDate).toLocaleDateString()}
+        </div>
+      </div>
+      <a href="${upload.link}" class="file-link" target="_blank">View Link →</a>
+    </div>
+  `).join('');
+}
+</script>
+
+</body>
+</html>

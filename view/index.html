@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loading Document...</title>
+<script>
+// Extract document ID from URL and redirect to view.html with query parameter
+const pathParts = window.location.pathname.split('/');
+const docId = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2];
+
+if (docId && docId !== 'view') {
+  window.location.href = `/view.html?id=${docId}`;
+} else {
+  window.location.href = '/';
+}
+</script>
+</head>
+<body>
+<p style="text-align: center; padding: 100px 20px; font-family: sans-serif; color: #666;">
+  Loading document...
+</p>
+</body>
+</html>
