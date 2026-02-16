@@ -232,66 +232,68 @@ if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
-function loadDocument() {
+async function loadDocument() {
   const content = document.getElementById('content');
 
-  // Get document from localStorage
-  const uploads = JSON.parse(localStorage.getItem('vf_uploads') || '[]');
-  const doc = uploads.find(u => u.id === docId);
+  try {
+    // Try localStorage first (fast access for recently uploaded docs)
+    const uploads = JSON.parse(localStorage.getItem('vf_uploads') || '[]');
+    let doc = uploads.find(u => u.id === docId);
 
-  if (!doc) {
+    // If not in localStorage, fetch from API
+    if (!doc) {
+      const response = await fetch(`/api/documents?id=${docId}`);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error('Document not found');
+      }
+
+      doc = result.document;
+    }
+
+    // Display document info and real file
+    content.innerHTML = `
+      <div class="doc-header">
+        <h1 class="doc-title">${escapeHtml(doc.docTitle)}</h1>
+        <div class="doc-meta">
+          Prepared for ${escapeHtml(doc.clientName)} • ${new Date(doc.uploadDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </div>
+        ${doc.description ? `<p class="doc-description">${escapeHtml(doc.description)}</p>` : ''}
+      </div>
+
+      <div class="watermark-notice">
+        <p><strong>Watermarked Preview</strong></p>
+        <small>This document has been watermarked with the VisionFarm logo at 25% opacity.</small>
+      </div>
+
+      <div class="preview-container">
+        <div id="documentDisplay">
+          ${doc.fileName.toLowerCase().endsWith('.pdf')
+            ? `<iframe src="${doc.fileUrl}" style="width: 100%; height: 800px; border: none; border-radius: 8px;"></iframe>`
+            : `<img src="${doc.fileUrl}" alt="${escapeHtml(doc.docTitle)}" style="width: 100%; display: block; border-radius: 8px;">`
+          }
+        </div>
+      </div>
+    `;
+
+    // Show download button
+    const downloadBtn = document.getElementById('downloadBtn');
+    downloadBtn.style.display = 'inline-block';
+    downloadBtn.onclick = (e) => {
+      e.preventDefault();
+      alert('To request the full unwatermarked document, please contact VisionFarm at contact@visionfarm.tech');
+    };
+
+  } catch (error) {
+    console.error('Load error:', error);
     content.innerHTML = `
       <div class="error-message">
         <h2>Document Not Found</h2>
         <p>The document you're looking for doesn't exist or has been removed.</p>
       </div>
     `;
-    return;
   }
-
-  // Display document info
-  content.innerHTML = `
-    <div class="doc-header">
-      <h1 class="doc-title">${escapeHtml(doc.docTitle)}</h1>
-      <div class="doc-meta">
-        Prepared for ${escapeHtml(doc.clientName)} • ${new Date(doc.uploadDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-      </div>
-      ${doc.description ? `<p class="doc-description">${escapeHtml(doc.description)}</p>` : ''}
-    </div>
-
-    <div class="watermark-notice">
-      <p><strong>Preview Mode</strong></p>
-      <small>This document contains a watermark. Contact VisionFarm for the full version.</small>
-    </div>
-
-    <div class="preview-container">
-      <div id="documentDisplay">
-        <div class="watermark-overlay">
-          <div class="watermark-text">${escapeHtml(doc.clientName)} • PREVIEW</div>
-        </div>
-        <div style="padding: 40px; text-align: center; color: #666;">
-          <p style="margin-bottom: 16px;">📄 ${escapeHtml(doc.fileName)}</p>
-          <p style="font-size: 14px; color: #999;">
-            In a production environment, this would display the actual document<br>
-            with watermark overlay using PDF.js or Canvas API.
-          </p>
-          <p style="margin-top: 24px; font-size: 13px; color: #999;">
-            For now, this is a placeholder demonstrating the preview interface.<br>
-            The full implementation would include file storage (AWS S3, Cloudflare R2)<br>
-            and real-time watermarking.
-          </p>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Show download button
-  const downloadBtn = document.getElementById('downloadBtn');
-  downloadBtn.style.display = 'inline-block';
-  downloadBtn.onclick = (e) => {
-    e.preventDefault();
-    alert('To request the full unwatermarked document, please contact VisionFarm at contact@visionfarm.tech');
-  };
 }
 
 function escapeHtml(text) {

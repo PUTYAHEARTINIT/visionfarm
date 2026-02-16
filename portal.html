@@ -265,7 +265,7 @@ function showAlert(message, type = 'success') {
   setTimeout(() => container.innerHTML = '', 5000);
 }
 
-function uploadDocument() {
+async function uploadDocument() {
   const clientName = document.getElementById('clientName').value.trim();
   const docTitle = document.getElementById('docTitle').value.trim();
   const docDescription = document.getElementById('docDescription').value.trim();
@@ -277,34 +277,52 @@ function uploadDocument() {
   }
 
   const file = fileInput.files[0];
-  const fileId = generateId();
+  const uploadBtn = document.getElementById('uploadBtn');
 
-  // In a real implementation, upload to server/storage
-  // For now, simulate upload and generate link
+  // Disable button during upload
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = 'Uploading & Watermarking...';
 
-  const uploadData = {
-    id: fileId,
-    clientName,
-    docTitle,
-    description: docDescription,
-    fileName: file.name,
-    uploadDate: new Date().toISOString(),
-    link: `https://visionfarm.tech/view/${fileId}`
-  };
+  try {
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('clientName', clientName);
+    formData.append('docTitle', docTitle);
+    formData.append('description', docDescription);
 
-  // Save to localStorage (upgrade to database later)
-  saveUpload(uploadData);
+    // Upload to API
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    });
 
-  showAlert(`✅ Document uploaded! Link: ${uploadData.link}`, 'success');
+    const result = await response.json();
 
-  // Reset form
-  document.getElementById('clientName').value = '';
-  document.getElementById('docTitle').value = '';
-  document.getElementById('docDescription').value = '';
-  fileInput.value = '';
-  document.getElementById('uploadBtn').disabled = true;
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Upload failed');
+    }
 
-  loadUploadedFiles();
+    // Save to localStorage for quick access
+    saveUpload(result.document);
+
+    showAlert(`✅ Document uploaded with watermark! Link: ${result.document.link}`, 'success');
+
+    // Reset form
+    document.getElementById('clientName').value = '';
+    document.getElementById('docTitle').value = '';
+    document.getElementById('docDescription').value = '';
+    fileInput.value = '';
+
+    loadUploadedFiles();
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    showAlert(`❌ Upload failed: ${error.message}`, 'error');
+  } finally {
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = 'Upload & Generate Link';
+  }
 }
 
 function generateId() {
