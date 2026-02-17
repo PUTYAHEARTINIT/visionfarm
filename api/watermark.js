@@ -4,6 +4,7 @@ import sharp from 'sharp';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { createHash } from 'crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LOGO_PATH = join(__dirname, 'logo-watermark.png');
@@ -92,7 +93,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   try {
-    const { blobUrl, fileName, mimeType, clientName, docTitle, description } = await readBody(req);
+    const { blobUrl, fileName, mimeType, clientName, docTitle, description, password } = await readBody(req);
 
     if (!blobUrl || !clientName || !docTitle) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -133,7 +134,8 @@ export default async function handler(req, res) {
       fileName: finalFileName,
       fileUrl: blob.url,
       uploadDate: new Date().toISOString(),
-      link: `https://visionfarm.tech/view?id=${docId}`
+      link: `https://visionfarm.tech/view?id=${docId}`,
+      passwordHash: password ? createHash('sha256').update(password).digest('hex') : null
     };
 
     await put(`documents/${docId}/metadata.json`, JSON.stringify(document), {
