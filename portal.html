@@ -279,6 +279,12 @@ async function uploadDocument() {
   const file = fileInput.files[0];
   const uploadBtn = document.getElementById('uploadBtn');
 
+  // Enforce 4MB limit (Vercel serverless payload cap)
+  if (file.size > 4 * 1024 * 1024) {
+    showAlert('❌ File too large. Please upload a file under 4MB.', 'error');
+    return;
+  }
+
   // Disable button during upload
   uploadBtn.disabled = true;
   uploadBtn.textContent = 'Uploading & Watermarking...';
@@ -296,6 +302,11 @@ async function uploadDocument() {
       method: 'POST',
       body: formData
     });
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error(response.status === 413 ? 'File too large for server. Keep files under 4MB.' : `Server error (${response.status})`);
+    }
 
     const result = await response.json();
 
