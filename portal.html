@@ -279,39 +279,58 @@ async function uploadDocument() {
   const file = fileInput.files[0];
   const uploadBtn = document.getElementById('uploadBtn');
 
-  // Enforce 4MB limit (Vercel serverless payload cap)
-  if (file.size > 4 * 1024 * 1024) {
-    showAlert('❌ File too large. Please upload a file under 4MB.', 'error');
+  // Enforce 50MB limit
+  if (file.size > 50 * 1024 * 1024) {
+    showAlert('❌ File too large. Maximum size is 50MB.', 'error');
     return;
   }
 
   // Disable button during upload
   uploadBtn.disabled = true;
-  uploadBtn.textContent = 'Uploading & Watermarking...';
+  uploadBtn.textContent = 'Uploading file...';
 
   try {
-    // Create form data
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('clientName', clientName);
-    formData.append('docTitle', docTitle);
-    formData.append('description', docDescription);
-
-    // Upload to API
-    const response = await fetch('/api/upload', {
+    // ── Step 1: Get a client upload token from our API ──
+    const tokenRes = await fetch('/api/upload-token', {
       method: 'POST',
-      body: formData
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ type: 'blob.generate-client-token', payload: { pathname: file.name, callbackUrl: `${location.origin}/api/upload-token`, multipart: false, clientPayload: null } })
+    });
+    const tokenData = await tokenRes.json();
+    if (!tokenRes.ok || !tokenData.clientToken) throw new Error(tokenData.error || 'Could not get upload token');
+
+    // ── Step 2: Upload file directly to Vercel Blob (bypasses function payload limit) ──
+    uploadBtn.textContent = 'Uploading to storage...';
+    const blobRes = await fetch(`https://blob.vercel-storage.com/${file.name}`, {
+      method: 'PUT',
+      headers: {
+        'authorization': `Bearer ${tokenData.clientToken}`,
+        'x-api-version': '7',
+        'content-type': file.type,
+      },
+      body: file
+    });
+    if (!blobRes.ok) throw new Error(`Storage upload failed (${blobRes.status})`);
+    const blobData = await blobRes.json();
+    const blobUrl = blobData.url;
+
+    // ── Step 3: Call watermark API with the blob URL ──
+    uploadBtn.textContent = 'Watermarking...';
+    const response = await fetch('/api/watermark', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ blobUrl, fileName: file.name, mimeType: file.type, clientName, docTitle, description: docDescription })
     });
 
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
-      throw new Error(response.status === 413 ? 'File too large for server. Keep files under 4MB.' : `Server error (${response.status})`);
+      throw new Error(`Server error (${response.status})`);
     }
 
     const result = await response.json();
 
     if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Upload failed');
+      throw new Error(result.error || 'Watermark failed');
     }
 
     // Save to localStorage for quick access

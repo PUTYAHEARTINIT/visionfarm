@@ -6,6 +6,10 @@
   "functions": {
     "api/upload.js": {
       "includeFiles": "logo-watermark.png"
+    },
+    "api/watermark.js": {
+      "includeFiles": "logo-watermark.png",
+      "maxDuration": 60
     }
   },
   "rewrites": [
