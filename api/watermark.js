@@ -2,9 +2,11 @@ import { put } from '@vercel/blob';
 import { PDFDocument } from 'pdf-lib';
 import sharp from 'sharp';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const LOGO_PATH = join(process.cwd(), 'logo-watermark.png');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const LOGO_PATH = join(__dirname, 'logo-watermark.png');
 
 async function watermarkPDF(pdfBuffer, logoPath) {
   const pdfDoc = await PDFDocument.load(pdfBuffer);
