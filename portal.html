@@ -348,22 +348,25 @@ textarea {
       </div>
 
       <div class="form-group">
-        <label>Pricing Tiers — Real Stripe Checkout <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — fill in a tier's name + price to enable "Buy Now" buttons on the pitch; leave a tier blank to skip it)</span></label>
-        <div style="display:grid;grid-template-columns:1.3fr .6fr 1.6fr;gap:8px;margin-bottom:8px">
+        <label>Pricing Tiers — Real Stripe Checkout <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — fill in a tier's name + price to enable "Buy Now" buttons on the pitch; leave a tier blank to skip it. Prices stay hidden on the pitch page until the client picks a tier to view.)</span></label>
+
+        <div style="display:grid;grid-template-columns:1.3fr .6fr;gap:8px;margin-bottom:4px">
           <input type="text" id="tier1Name" placeholder="Tier name" value="Site in Full">
           <input type="text" id="tier1Price" placeholder="1000" value="1000">
-          <input type="text" id="tier1Desc" placeholder="What's included" value="The pitch site above, built and launched.">
         </div>
-        <div style="display:grid;grid-template-columns:1.3fr .6fr 1.6fr;gap:8px;margin-bottom:8px">
+        <textarea id="tier1Desc" placeholder="What's included" style="margin-bottom:14px">A complete, mobile-responsive website built and deployed to a live URL — home page, menu or services, photo gallery, hours & location, and a clear call-to-action (call, order, or contact). Includes copywriting for every page, SEO-friendly structure, and one round of revisions before launch.</textarea>
+
+        <div style="display:grid;grid-template-columns:1.3fr .6fr;gap:8px;margin-bottom:4px">
           <input type="text" id="tier2Name" placeholder="Tier name" value="Site + Expansion Features">
           <input type="text" id="tier2Price" placeholder="1750" value="1750">
-          <input type="text" id="tier2Desc" placeholder="What's included" value="The site, plus 2-3 features from the ideas above.">
         </div>
-        <div style="display:grid;grid-template-columns:1.3fr .6fr 1.6fr;gap:8px">
+        <textarea id="tier2Desc" placeholder="What's included" style="margin-bottom:14px">Everything in Site in Full, plus 2-3 features pulled from the expansion ideas above — for example online ordering, a rewards/loyalty signup, or automated review requests. We'll scope the exact features together once you've reviewed the ideas panel, so this tier is tailored to what actually moves the needle for the business.</textarea>
+
+        <div style="display:grid;grid-template-columns:1.3fr .6fr;gap:8px;margin-bottom:4px">
           <input type="text" id="tier3Name" placeholder="Tier name" value="Full Company Ecosystem">
           <input type="text" id="tier3Price" placeholder="2500" value="2500">
-          <input type="text" id="tier3Desc" placeholder="What's included" value="Site, expansion features, and ongoing support built out together.">
         </div>
+        <textarea id="tier3Desc" placeholder="What's included">The complete build: the site, the chosen expansion features, and ongoing support after launch — monthly content and photo updates, basic local SEO upkeep, and a direct line to us for changes as the business grows. This is a one-time build fee; ongoing monthly support terms are set up separately once we're underway.</textarea>
       </div>
 
       <div class="form-group">
