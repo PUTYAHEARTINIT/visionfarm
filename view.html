@@ -83,6 +83,36 @@ body {
   line-height: 1.6;
 }
 
+.about-band {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-bottom: 32px;
+  padding: 24px 28px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+}
+
+.about-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #c9a55c;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.about-band p {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: rgba(232,230,225,0.75);
+}
+
+@media (max-width: 768px) {
+  .about-band { grid-template-columns: 1fr; }
+}
+
 .offer-band {
   display: flex;
   gap: 28px;
@@ -477,6 +507,16 @@ function renderDocument(doc) {
         Prepared for ${escapeHtml(doc.clientName)} • ${new Date(doc.uploadDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
       </div>
       ${doc.description ? `<p class="doc-description">${escapeHtml(doc.description)}</p>` : ''}
+    </div>
+    <div class="about-band">
+      <div>
+        <div class="about-label">Who We Are</div>
+        <p>VisionFarm is a small creative-and-tech studio that builds real, working pitches instead of mockups — so you can see and use the finished thing before committing to anything. We handle the design, the build, and the launch, then help grow what comes after with photography, content, ads, and ongoing support.</p>
+      </div>
+      <div>
+        <div class="about-label">What We Built for ${escapeHtml(doc.clientName)}</div>
+        <p>${doc.description ? escapeHtml(doc.description) : `A working look at ${escapeHtml(doc.docTitle)}, built to show what's possible — reach out any time to talk through changes or next steps.`}</p>
+      </div>
     </div>
     ${isWebsite ? '' : `
     <div class="watermark-notice">
