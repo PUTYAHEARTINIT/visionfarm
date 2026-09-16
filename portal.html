@@ -304,6 +304,16 @@ textarea {
       </div>
 
       <div class="form-group">
+        <label>Price <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — shown as "This site: $X" at the top of the pitch)</span></label>
+        <input type="text" id="sitePrice" placeholder="$1,000">
+      </div>
+
+      <div class="form-group">
+        <label>Other Services to Offer <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — one per line)</span></label>
+        <textarea id="siteServices" placeholder="Menu Design Package&#10;Product Photography&#10;Customer Subscription Model&#10;Rewards Program&#10;Local SEO&#10;Paid Ads Management"></textarea>
+      </div>
+
+      <div class="form-group">
         <label>View Password <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — leave blank for open access)</span></label>
         <input type="password" id="sitePassword" placeholder="Set a password for the recipient...">
       </div>
@@ -348,6 +358,8 @@ async function shareWebsite() {
   const description = document.getElementById('siteDescription').value.trim();
   const siteUrl = document.getElementById('siteUrl').value.trim();
   const slug = document.getElementById('siteSlug').value.trim();
+  const price = document.getElementById('sitePrice').value.trim();
+  const services = document.getElementById('siteServices').value.split('\n').map(s => s.trim()).filter(Boolean);
   const password = document.getElementById('sitePassword').value.trim();
 
   if (!clientName || !docTitle || !siteUrl) {
@@ -367,7 +379,7 @@ async function shareWebsite() {
     const response = await fetch('/api/share-site', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ clientName, docTitle, description, siteUrl, slug, password }),
+      body: JSON.stringify({ clientName, docTitle, description, siteUrl, slug, price, services, password }),
     });
     const result = await response.json();
     if (!response.ok || !result.success) throw new Error(result.error || 'Failed to create share link');
@@ -380,6 +392,8 @@ async function shareWebsite() {
     document.getElementById('siteDescription').value = '';
     document.getElementById('siteUrl').value = '';
     document.getElementById('siteSlug').value = '';
+    document.getElementById('sitePrice').value = '';
+    document.getElementById('siteServices').value = '';
     document.getElementById('sitePassword').value = '';
 
     loadUploadedFiles();
