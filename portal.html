@@ -162,6 +162,40 @@ textarea {
   display: none;
 }
 
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: rgba(232,230,225,0.5);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: rgba(201,165,92,0.12);
+  color: #c9a55c;
+}
+
+#websiteForm {
+  display: none;
+}
+
 .alert {
   padding: 12px 16px;
   border-radius: 6px;
@@ -204,40 +238,81 @@ textarea {
 
   <!-- Upload Form (hidden until login) -->
   <div id="uploadForm">
-    <h1>Upload Documents</h1>
-    <p class="subtitle">Share watermarked documents with clients</p>
+    <h1>Share With a Client</h1>
+    <p class="subtitle">Send a watermarked document, or a live pitch site, as one VisionFarm link</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tabBtnDoc" onclick="showTab('doc')">📄 Document</button>
+      <button class="tab-btn" id="tabBtnSite" onclick="showTab('site')">🌐 Website</button>
+    </div>
 
     <div id="alertContainer"></div>
 
-    <div class="form-group">
-      <label>Client Name (for watermark)</label>
-      <input type="text" id="clientName" placeholder="e.g., Acme Corp">
+    <div id="documentForm">
+      <div class="form-group">
+        <label>Client Name (for watermark)</label>
+        <input type="text" id="clientName" placeholder="e.g., Acme Corp">
+      </div>
+
+      <div class="form-group">
+        <label>Document Title</label>
+        <input type="text" id="docTitle" placeholder="e.g., Q1 Strategy Proposal">
+      </div>
+
+      <div class="form-group">
+        <label>Description (optional)</label>
+        <textarea id="docDescription" placeholder="Brief description of the document..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>View Password <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — leave blank for open access)</span></label>
+        <input type="password" id="docPassword" placeholder="Set a password for the recipient...">
+      </div>
+
+      <div class="form-group">
+        <label>Upload Document (PDF or Image)</label>
+        <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileSelect()">
+      </div>
+
+      <button class="btn" id="uploadBtn" onclick="uploadDocument()" disabled>Upload & Generate Link</button>
     </div>
 
-    <div class="form-group">
-      <label>Document Title</label>
-      <input type="text" id="docTitle" placeholder="e.g., Q1 Strategy Proposal">
-    </div>
+    <div id="websiteForm">
+      <div class="form-group">
+        <label>Client Name</label>
+        <input type="text" id="siteClientName" placeholder="e.g., La Fritanga">
+      </div>
 
-    <div class="form-group">
-      <label>Description (optional)</label>
-      <textarea id="docDescription" placeholder="Brief description of the document..."></textarea>
-    </div>
+      <div class="form-group">
+        <label>Site / Pitch Title</label>
+        <input type="text" id="siteTitle" placeholder="e.g., La Fritanga — Website Pitch">
+      </div>
 
-    <div class="form-group">
-      <label>View Password <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — leave blank for open access)</span></label>
-      <input type="password" id="docPassword" placeholder="Set a password for the recipient...">
-    </div>
+      <div class="form-group">
+        <label>Description (optional)</label>
+        <textarea id="siteDescription" placeholder="Brief description of what this is..."></textarea>
+      </div>
 
-    <div class="form-group">
-      <label>Upload Document (PDF or Image)</label>
-      <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileSelect()">
-    </div>
+      <div class="form-group">
+        <label>Live Site URL</label>
+        <input type="text" id="siteUrl" placeholder="https://la-fritanga-pitch.vercel.app">
+      </div>
 
-    <button class="btn" id="uploadBtn" onclick="uploadDocument()" disabled>Upload & Generate Link</button>
+      <div class="form-group">
+        <label>Custom Link <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — e.g. "la-fritanga" → visionfarm.tech/view?id=la-fritanga)</span></label>
+        <input type="text" id="siteSlug" placeholder="la-fritanga">
+      </div>
+
+      <div class="form-group">
+        <label>View Password <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — leave blank for open access)</span></label>
+        <input type="password" id="sitePassword" placeholder="Set a password for the recipient...">
+      </div>
+
+      <button class="btn" id="shareBtn" onclick="shareWebsite()">Create Share Link</button>
+    </div>
 
     <div class="uploaded-files" id="uploadedFiles" style="display: none;">
-      <h2 style="font-size: 18px; margin-bottom: 16px;">Recent Uploads</h2>
+      <h2 style="font-size: 18px; margin-bottom: 16px;">Recent Shares</h2>
       <div id="filesList"></div>
     </div>
   </div>
@@ -255,6 +330,65 @@ function login() {
     loadUploadedFiles();
   } else {
     alert('Incorrect password');
+  }
+}
+
+function showTab(tab) {
+  const isDoc = tab === 'doc';
+  document.getElementById('documentForm').style.display = isDoc ? 'block' : 'none';
+  document.getElementById('websiteForm').style.display = isDoc ? 'none' : 'block';
+  document.getElementById('tabBtnDoc').classList.toggle('active', isDoc);
+  document.getElementById('tabBtnSite').classList.toggle('active', !isDoc);
+  document.getElementById('alertContainer').innerHTML = '';
+}
+
+async function shareWebsite() {
+  const clientName = document.getElementById('siteClientName').value.trim();
+  const docTitle = document.getElementById('siteTitle').value.trim();
+  const description = document.getElementById('siteDescription').value.trim();
+  const siteUrl = document.getElementById('siteUrl').value.trim();
+  const slug = document.getElementById('siteSlug').value.trim();
+  const password = document.getElementById('sitePassword').value.trim();
+
+  if (!clientName || !docTitle || !siteUrl) {
+    showAlert('Please fill in client name, title, and site URL', 'error');
+    return;
+  }
+  if (!/^https?:\/\//i.test(siteUrl)) {
+    showAlert('Site URL needs to start with http:// or https://', 'error');
+    return;
+  }
+
+  const shareBtn = document.getElementById('shareBtn');
+  shareBtn.disabled = true;
+  shareBtn.textContent = 'Creating link...';
+
+  try {
+    const response = await fetch('/api/share-site', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ clientName, docTitle, description, siteUrl, slug, password }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.error || 'Failed to create share link');
+
+    saveUpload(result.document);
+    showAlert(`✅ Link ready${password ? ' 🔒 (password protected)' : ''}: ${result.document.link}`, 'success');
+
+    document.getElementById('siteClientName').value = '';
+    document.getElementById('siteTitle').value = '';
+    document.getElementById('siteDescription').value = '';
+    document.getElementById('siteUrl').value = '';
+    document.getElementById('siteSlug').value = '';
+    document.getElementById('sitePassword').value = '';
+
+    loadUploadedFiles();
+  } catch (error) {
+    console.error('Share-site error:', error);
+    showAlert(`❌ ${error.message}`, 'error');
+  } finally {
+    shareBtn.disabled = false;
+    shareBtn.textContent = 'Create Share Link';
   }
 }
 
