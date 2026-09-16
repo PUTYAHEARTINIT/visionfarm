@@ -139,6 +139,77 @@ body {
   padding: 6px 14px;
 }
 
+.pricing-tiers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 32px;
+}
+
+.tier-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tier-card.featured {
+  border-color: rgba(201,165,92,0.5);
+  background: rgba(201,165,92,0.06);
+}
+
+.tier-name {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(232,230,225,0.6);
+}
+
+.tier-price {
+  font-size: 30px;
+  font-weight: 600;
+  color: #c9a55c;
+}
+
+.tier-desc {
+  font-size: 13px;
+  color: rgba(232,230,225,0.7);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.tier-btn {
+  padding: 12px;
+  background: rgba(201,165,92,0.1);
+  border: 1px solid #c9a55c;
+  border-radius: 6px;
+  color: #c9a55c;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tier-btn:hover { background: rgba(201,165,92,0.2); }
+.tier-btn:disabled { opacity: 0.5; cursor: default; }
+
+.paid-banner {
+  background: rgba(77,128,60,0.12);
+  border: 1px solid #4d803c;
+  border-radius: 8px;
+  padding: 18px 24px;
+  margin-bottom: 24px;
+  text-align: center;
+  color: #8fd47a;
+}
+
+.paid-banner strong { color: #a6e392; }
+
 .preview-container {
   position: relative;
   background: rgba(255,255,255,0.03);
@@ -384,8 +455,17 @@ async function checkPassword() {
 
 function renderDocument(doc) {
   const isWebsite = doc.type === 'website';
+  const hasTiers = isWebsite && Array.isArray(doc.pricingTiers) && doc.pricingTiers.length > 0;
+  const showPriceInBand = isWebsite && doc.price && !hasTiers;
+  const showServices = isWebsite && doc.services && doc.services.length;
+  const justPaid = urlParams.get('paid') === '1';
 
   document.getElementById('content').innerHTML = `
+    ${justPaid ? `
+    <div class="paid-banner">
+      <strong>Payment received — thank you!</strong><br>
+      We'll be in touch shortly to kick things off.
+    </div>` : ''}
     <div class="doc-header">
       <h1 class="doc-title">${escapeHtml(doc.docTitle)}</h1>
       <div class="doc-meta">
@@ -393,20 +473,30 @@ function renderDocument(doc) {
       </div>
       ${doc.description ? `<p class="doc-description">${escapeHtml(doc.description)}</p>` : ''}
     </div>
-    ${isWebsite && (doc.price || (doc.services && doc.services.length)) ? `
+    ${(showPriceInBand || showServices) ? `
     <div class="offer-band">
-      ${doc.price ? `
+      ${showPriceInBand ? `
       <div>
         <div class="offer-price-label">This site</div>
         <div class="offer-price">${escapeHtml(doc.price)}</div>
       </div>` : ''}
-      ${doc.services && doc.services.length ? `
+      ${showServices ? `
       <div class="offer-services">
         <div class="offer-services-label">We can also help with</div>
         <div class="offer-chips">
           ${doc.services.map(s => `<span class="offer-chip">${escapeHtml(s)}</span>`).join('')}
         </div>
       </div>` : ''}
+    </div>` : ''}
+    ${hasTiers ? `
+    <div class="pricing-tiers">
+      ${doc.pricingTiers.map((t, i) => `
+      <div class="tier-card ${i === 1 ? 'featured' : ''}">
+        <div class="tier-name">${escapeHtml(t.name)}</div>
+        <div class="tier-price">$${Number(t.price).toLocaleString()}</div>
+        ${t.description ? `<div class="tier-desc">${escapeHtml(t.description)}</div>` : ''}
+        <button class="tier-btn" onclick="checkoutTier(${i})">Choose This</button>
+      </div>`).join('')}
     </div>` : ''}
     ${isWebsite ? '' : `
     <div class="watermark-notice">
@@ -446,6 +536,28 @@ function renderDocument(doc) {
       e.preventDefault();
       alert('To request the full unwatermarked document, please contact VisionFarm at contact@visionfarm.tech');
     };
+  }
+}
+
+async function checkoutTier(tierIndex) {
+  const btns = document.querySelectorAll('.tier-btn');
+  btns.forEach(b => { b.disabled = true; });
+  const clicked = event.target;
+  const originalText = clicked.textContent;
+  clicked.textContent = 'Starting checkout...';
+  try {
+    const response = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ docId, tierIndex }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.error || 'Could not start checkout');
+    window.location.href = result.url;
+  } catch (error) {
+    alert(error.message || 'Something went wrong starting checkout.');
+    btns.forEach(b => { b.disabled = false; });
+    clicked.textContent = originalText;
   }
 }
 

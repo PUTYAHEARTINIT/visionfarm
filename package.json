@@ -9,9 +9,12 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.126.0",
     "@vercel/blob": "^0.23.0",
     "pdf-lib": "^1.17.1",
-    "sharp": "^0.33.0"
+    "sharp": "^0.33.0",
+    "stripe": "^22.6.2",
+    "zod": "^4.6.5"
   },
   "engines": {
     "node": ">=18"

@@ -35,7 +35,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { clientName, docTitle, description, siteUrl, password, slug, price, services } = await readBody(req);
+    const { clientName, docTitle, description, siteUrl, password, slug, price, services, pricingTiers } = await readBody(req);
 
     if (!clientName || !docTitle || !siteUrl) {
       return res.status(400).json({ error: 'Client name, title, and site URL are required' });
@@ -57,6 +57,17 @@ export default async function handler(req, res) {
       docId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
     }
 
+    const cleanTiers = Array.isArray(pricingTiers)
+      ? pricingTiers
+          .filter(t => t && t.name && t.price)
+          .map(t => ({
+            name: String(t.name).trim(),
+            price: Math.round(Number(t.price) * 100) / 100, // dollars, 2dp
+            description: t.description ? String(t.description).trim() : '',
+          }))
+          .filter(t => Number.isFinite(t.price) && t.price > 0)
+      : [];
+
     const document = {
       id: docId,
       type: 'website',
@@ -66,6 +77,7 @@ export default async function handler(req, res) {
       siteUrl,
       price: price || '',
       services: Array.isArray(services) ? services.filter(Boolean) : [],
+      pricingTiers: cleanTiers,
       uploadDate: new Date().toISOString(),
       link: `https://visionfarm.tech/view?id=${docId}`,
       passwordHash: password ? createHash('sha256').update(password).digest('hex') : null,

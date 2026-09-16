@@ -129,6 +129,40 @@ textarea {
   border-top: 1px solid rgba(255,255,255,0.06);
 }
 
+.brainstorm-panel {
+  margin-top: 32px;
+  padding: 20px;
+  background: rgba(201,165,92,0.05);
+  border: 1px solid rgba(201,165,92,0.25);
+  border-radius: 8px;
+}
+
+.idea-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.idea-title {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: #e8e6e1;
+  margin-bottom: 4px;
+}
+
+.idea-why {
+  font-size: 12.5px;
+  color: rgba(232,230,225,0.6);
+  line-height: 1.5;
+}
+
+.brainstorm-loading {
+  font-size: 13px;
+  color: rgba(232,230,225,0.5);
+}
+
 .file-item {
   background: rgba(255,255,255,0.03);
   padding: 16px;
@@ -304,7 +338,7 @@ textarea {
       </div>
 
       <div class="form-group">
-        <label>Price <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — shown as "This site: $X" at the top of the pitch)</span></label>
+        <label>Price <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — shown as "This site: $X" if no pricing tiers below are filled in)</span></label>
         <input type="text" id="sitePrice" placeholder="$1,000">
       </div>
 
@@ -314,11 +348,36 @@ textarea {
       </div>
 
       <div class="form-group">
+        <label>Pricing Tiers — Real Stripe Checkout <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — fill in a tier's name + price to enable "Buy Now" buttons on the pitch; leave a tier blank to skip it)</span></label>
+        <div style="display:grid;grid-template-columns:1.3fr .6fr 1.6fr;gap:8px;margin-bottom:8px">
+          <input type="text" id="tier1Name" placeholder="Tier name" value="Site in Full">
+          <input type="text" id="tier1Price" placeholder="1000" value="1000">
+          <input type="text" id="tier1Desc" placeholder="What's included" value="The pitch site above, built and launched.">
+        </div>
+        <div style="display:grid;grid-template-columns:1.3fr .6fr 1.6fr;gap:8px;margin-bottom:8px">
+          <input type="text" id="tier2Name" placeholder="Tier name" value="Site + Expansion Features">
+          <input type="text" id="tier2Price" placeholder="1750" value="1750">
+          <input type="text" id="tier2Desc" placeholder="What's included" value="The site, plus 2-3 features from the ideas above.">
+        </div>
+        <div style="display:grid;grid-template-columns:1.3fr .6fr 1.6fr;gap:8px">
+          <input type="text" id="tier3Name" placeholder="Tier name" value="Full Company Ecosystem">
+          <input type="text" id="tier3Price" placeholder="2500" value="2500">
+          <input type="text" id="tier3Desc" placeholder="What's included" value="Site, expansion features, and ongoing support built out together.">
+        </div>
+      </div>
+
+      <div class="form-group">
         <label>View Password <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — leave blank for open access)</span></label>
         <input type="password" id="sitePassword" placeholder="Set a password for the recipient...">
       </div>
 
       <button class="btn" id="shareBtn" onclick="shareWebsite()">Create Share Link</button>
+    </div>
+
+    <div class="brainstorm-panel" id="brainstormPanel" style="display: none;">
+      <h2 style="font-size: 16px; margin-bottom: 4px;">🧠 Expansion Ideas</h2>
+      <p style="font-size: 12px; color: rgba(232,230,225,0.5); margin-bottom: 16px;" id="brainstormFor"></p>
+      <div id="brainstormList"></div>
     </div>
 
     <div class="uploaded-files" id="uploadedFiles" style="display: none;">
@@ -362,6 +421,12 @@ async function shareWebsite() {
   const services = document.getElementById('siteServices').value.split('\n').map(s => s.trim()).filter(Boolean);
   const password = document.getElementById('sitePassword').value.trim();
 
+  const pricingTiers = [1, 2, 3].map(n => ({
+    name: document.getElementById(`tier${n}Name`).value.trim(),
+    price: document.getElementById(`tier${n}Price`).value.trim(),
+    description: document.getElementById(`tier${n}Desc`).value.trim(),
+  })).filter(t => t.name && t.price);
+
   if (!clientName || !docTitle || !siteUrl) {
     showAlert('Please fill in client name, title, and site URL', 'error');
     return;
@@ -379,7 +444,7 @@ async function shareWebsite() {
     const response = await fetch('/api/share-site', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ clientName, docTitle, description, siteUrl, slug, price, services, password }),
+      body: JSON.stringify({ clientName, docTitle, description, siteUrl, slug, price, services, password, pricingTiers }),
     });
     const result = await response.json();
     if (!response.ok || !result.success) throw new Error(result.error || 'Failed to create share link');
@@ -397,6 +462,7 @@ async function shareWebsite() {
     document.getElementById('sitePassword').value = '';
 
     loadUploadedFiles();
+    runBrainstorm(clientName, docTitle, description, siteUrl);
   } catch (error) {
     console.error('Share-site error:', error);
     showAlert(`❌ ${error.message}`, 'error');
@@ -404,6 +470,40 @@ async function shareWebsite() {
     shareBtn.disabled = false;
     shareBtn.textContent = 'Create Share Link';
   }
+}
+
+async function runBrainstorm(clientName, docTitle, description, siteUrl) {
+  const panel = document.getElementById('brainstormPanel');
+  const list = document.getElementById('brainstormList');
+  document.getElementById('brainstormFor').textContent = `For ${clientName} — copy any of these into "Other Services to Offer" and re-save to add them to the pitch.`;
+  panel.style.display = 'block';
+  list.innerHTML = '<div class="brainstorm-loading">Thinking of expansion ideas…</div>';
+
+  try {
+    const response = await fetch('/api/brainstorm', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ clientName, docTitle, description, siteUrl }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.error || 'Brainstorm failed');
+
+    list.innerHTML = result.ideas.map(idea => `
+      <div class="idea-card">
+        <div class="idea-title">${escapeHtml(idea.title)}</div>
+        <div class="idea-why">${escapeHtml(idea.why)}</div>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Brainstorm error:', error);
+    list.innerHTML = `<div class="brainstorm-loading">Couldn't generate ideas: ${escapeHtml(error.message)}</div>`;
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 function handleFileSelect() {
