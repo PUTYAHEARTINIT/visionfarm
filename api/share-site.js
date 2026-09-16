@@ -83,9 +83,13 @@ export default async function handler(req, res) {
       passwordHash: password ? createHash('sha256').update(password).digest('hex') : null,
     };
 
+    // Without addRandomSuffix:false, @vercel/blob appends a random suffix on
+    // every put() instead of overwriting — so re-sharing the same slug would
+    // silently pile up stale copies instead of updating the live one.
     await put(`documents/${docId}/metadata.json`, JSON.stringify(document), {
       access: 'public',
       contentType: 'application/json',
+      addRandomSuffix: false,
     });
 
     return res.status(200).json({ success: true, document });

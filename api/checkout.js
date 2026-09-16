@@ -15,7 +15,11 @@ async function readBody(req) {
 
 async function loadDocument(docId) {
   const { blobs } = await list({ prefix: `documents/${docId}/` });
-  const metaBlob = blobs.find(b => b.pathname.endsWith('metadata.json'));
+  // Prior duplicate blobs from before put() was fixed to overwrite in place
+  // can still exist — pick the most recently uploaded match, not list() order.
+  const metaBlobs = blobs.filter(b => b.pathname.endsWith('metadata.json'))
+    .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+  const metaBlob = metaBlobs[0];
   if (!metaBlob) return null;
   const res = await fetch(metaBlob.url);
   return res.json();

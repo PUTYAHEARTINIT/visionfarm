@@ -21,8 +21,12 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Document not found' });
     }
 
-    // Find metadata file
-    const metadataBlob = blobs.find(b => b.pathname.endsWith('metadata.json'));
+    // Find metadata file — prior duplicate blobs from before put() was fixed
+    // to overwrite in place can still exist, so pick the most recently
+    // uploaded match rather than trusting list() ordering.
+    const metadataBlobs = blobs.filter(b => b.pathname.endsWith('metadata.json'))
+      .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+    const metadataBlob = metadataBlobs[0];
 
     if (!metadataBlob) {
       return res.status(404).json({ error: 'Document metadata not found' });
