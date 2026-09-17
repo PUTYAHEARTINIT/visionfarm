@@ -210,6 +210,82 @@ body {
   color: rgba(232,230,225,0.55);
 }
 
+.custom-ask {
+  background: rgba(201,165,92,0.04);
+  border: 1px dashed rgba(201,165,92,0.35);
+  border-radius: 10px;
+  padding: 32px 28px;
+  margin-top: 32px;
+}
+
+.custom-ask h3 {
+  font-size: 19px;
+  font-weight: 500;
+  color: #c9a55c;
+  margin-bottom: 10px;
+}
+
+.custom-ask > p {
+  font-size: 13.5px;
+  color: rgba(232,230,225,0.7);
+  margin-bottom: 20px;
+  max-width: 620px;
+  line-height: 1.5;
+}
+
+.custom-ask form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.custom-ask input,
+.custom-ask textarea {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 12px 14px;
+  color: #e8e6e1;
+  font-family: inherit;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.custom-ask input:focus,
+.custom-ask textarea:focus {
+  border-color: rgba(201,165,92,0.5);
+}
+
+.custom-ask textarea {
+  grid-column: 1 / -1;
+  min-height: 70px;
+  resize: vertical;
+}
+
+.custom-ask button {
+  grid-column: 1 / -1;
+  padding: 13px;
+  background: rgba(201,165,92,0.1);
+  border: 1px solid #c9a55c;
+  border-radius: 6px;
+  color: #c9a55c;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.custom-ask button:hover { background: rgba(201,165,92,0.2); }
+.custom-ask button:disabled { opacity: 0.5; cursor: default; }
+
+#ciStatus { margin-top: 12px; font-size: 13px; }
+
+@media (max-width: 640px) {
+  .custom-ask form { grid-template-columns: 1fr; }
+}
+
 .tier-name {
   font-size: 12.5px;
   text-transform: uppercase;
@@ -583,6 +659,19 @@ function renderDocument(doc) {
         ${t.description ? `<div class="tier-desc">${escapeHtml(t.description)}</div>` : ''}
         <button class="tier-btn" onclick="revealTierPrice(this,'monthly',${i})">View Pricing</button>
       </div>`).join('')}
+    </div>` : ''}
+    ${isWebsite ? `
+    <div class="custom-ask">
+      <h3>Have A Different Idea? Tell Us Your Budget.</h3>
+      <p>Not quite what you had in mind, or the options above don't fit right now? Tell us what you're thinking and what you'd like to spend — we'll see what we can put together.</p>
+      <form id="customForm" onsubmit="submitCustomInquiry(event)">
+        <input id="ciName" placeholder="Your name" required>
+        <input id="ciContact" placeholder="Email or phone" required>
+        <input id="ciBudget" placeholder="Your budget (e.g. $500, flexible)">
+        <textarea id="ciMessage" placeholder="What are you thinking?"></textarea>
+        <button type="submit">Send It Over</button>
+      </form>
+      <div id="ciStatus"></div>
     </div>` : ''}`;
 
   const footerNote = document.getElementById('footerNote');
@@ -638,6 +727,45 @@ async function checkoutTier(btnEl, billing, tierIndex) {
     alert(error.message || 'Something went wrong starting checkout.');
     btns.forEach(b => { b.disabled = false; });
     btnEl.textContent = originalText;
+  }
+}
+
+async function submitCustomInquiry(e) {
+  e.preventDefault();
+  const name = document.getElementById('ciName').value.trim();
+  const contact = document.getElementById('ciContact').value.trim();
+  const budget = document.getElementById('ciBudget').value.trim();
+  const message = document.getElementById('ciMessage').value.trim();
+  const statusEl = document.getElementById('ciStatus');
+  const btn = e.target.querySelector('button');
+
+  if (!name || !contact) {
+    statusEl.style.color = '#e57373';
+    statusEl.textContent = 'Name and email or phone are required.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  statusEl.textContent = '';
+
+  try {
+    const response = await fetch('/api/custom-inquiry', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ docId, name, contact, budget, message }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.error || 'Could not send that — try again.');
+    e.target.reset();
+    statusEl.style.color = '#8fd47a';
+    statusEl.textContent = "Got it — we'll be in touch soon.";
+  } catch (error) {
+    statusEl.style.color = '#e57373';
+    statusEl.textContent = error.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send It Over';
   }
 }
 
