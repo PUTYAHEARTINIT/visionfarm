@@ -33,28 +33,31 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { docId, tierIndex } = await readBody(req);
+    const { docId, tierIndex, billing } = await readBody(req);
     if (!docId || tierIndex === undefined) {
       return res.status(400).json({ error: 'docId and tierIndex are required' });
     }
+    const isMonthly = billing === 'monthly';
 
     const doc = await loadDocument(docId);
     if (!doc) return res.status(404).json({ error: 'Pitch not found' });
 
-    const tier = Array.isArray(doc.pricingTiers) ? doc.pricingTiers[tierIndex] : null;
-    if (!tier) return res.status(400).json({ error: 'That pricing tier does not exist for this pitch' });
-
     // The price is always read back from the stored document, never trusted
     // from the client — a tampered tierIndex just 404s on a bad index above,
     // it can never smuggle a different amount through.
+    const tierList = isMonthly ? doc.hostingTiers : doc.pricingTiers;
+    const tier = Array.isArray(tierList) ? tierList[tierIndex] : null;
+    if (!tier) return res.status(400).json({ error: 'That pricing tier does not exist for this pitch' });
+
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
+      mode: isMonthly ? 'subscription' : 'payment',
       line_items: [{
         price_data: {
           currency: 'usd',
           unit_amount: Math.round(tier.price * 100),
+          ...(isMonthly ? { recurring: { interval: 'month' } } : {}),
           product_data: {
             name: `${doc.clientName} — ${tier.name}`,
             description: tier.description || undefined,
@@ -64,7 +67,7 @@ export default async function handler(req, res) {
       }],
       success_url: `https://visionfarm.tech/view?id=${docId}&paid=1`,
       cancel_url: `https://visionfarm.tech/view?id=${docId}`,
-      metadata: { docId, tierName: tier.name, clientName: doc.clientName },
+      metadata: { docId, tierName: tier.name, clientName: doc.clientName, billing: isMonthly ? 'monthly' : 'once' },
     });
 
     return res.status(200).json({ success: true, url: session.url });

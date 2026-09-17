@@ -370,6 +370,22 @@ textarea {
       </div>
 
       <div class="form-group">
+        <label>Ongoing Hosting & Support — Monthly <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — recurring Stripe subscription, billed monthly. Leave a tier blank to skip it.)</span></label>
+
+        <div style="display:grid;grid-template-columns:1.3fr .6fr;gap:8px;margin-bottom:4px">
+          <input type="text" id="host1Name" placeholder="Tier name" value="Site Care — Basic">
+          <input type="text" id="host1Price" placeholder="49" value="49">
+        </div>
+        <textarea id="host1Desc" placeholder="What's included" style="margin-bottom:14px">Hosting, uptime monitoring, and up to 30 minutes of small text or photo updates each month — so the site stays live and current without you having to think about it.</textarea>
+
+        <div style="display:grid;grid-template-columns:1.3fr .6fr;gap:8px;margin-bottom:4px">
+          <input type="text" id="host2Name" placeholder="Tier name" value="Site Care — Plus">
+          <input type="text" id="host2Price" placeholder="89" value="89">
+        </div>
+        <textarea id="host2Desc" placeholder="What's included">Everything in Basic, plus a monthly social graphic and a basic monthly local SEO checkup — a little ongoing marketing effort on top of just keeping the lights on.</textarea>
+      </div>
+
+      <div class="form-group">
         <label>View Password <span style="opacity:0.45;font-weight:400;font-size:11px;letter-spacing:1px">(OPTIONAL — leave blank for open access)</span></label>
         <input type="password" id="sitePassword" placeholder="Set a password for the recipient...">
       </div>
@@ -430,6 +446,12 @@ async function shareWebsite() {
     description: document.getElementById(`tier${n}Desc`).value.trim(),
   })).filter(t => t.name && t.price);
 
+  const hostingTiers = [1, 2].map(n => ({
+    name: document.getElementById(`host${n}Name`).value.trim(),
+    price: document.getElementById(`host${n}Price`).value.trim(),
+    description: document.getElementById(`host${n}Desc`).value.trim(),
+  })).filter(t => t.name && t.price);
+
   if (!clientName || !docTitle || !siteUrl) {
     showAlert('Please fill in client name, title, and site URL', 'error');
     return;
@@ -447,7 +469,7 @@ async function shareWebsite() {
     const response = await fetch('/api/share-site', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ clientName, docTitle, description, siteUrl, slug, price, services, password, pricingTiers }),
+      body: JSON.stringify({ clientName, docTitle, description, siteUrl, slug, price, services, password, pricingTiers, hostingTiers }),
     });
     const result = await response.json();
     if (!response.ok || !result.success) throw new Error(result.error || 'Failed to create share link');

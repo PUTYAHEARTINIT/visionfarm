@@ -196,6 +196,20 @@ body {
   background: rgba(201,165,92,0.08);
 }
 
+.tiers-heading {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(232,230,225,0.55);
+  margin: 8px 0 14px;
+}
+
+.tier-per {
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(232,230,225,0.55);
+}
+
 .tier-name {
   font-size: 12.5px;
   text-transform: uppercase;
@@ -491,6 +505,7 @@ async function checkPassword() {
 function renderDocument(doc) {
   const isWebsite = doc.type === 'website';
   const hasTiers = isWebsite && Array.isArray(doc.pricingTiers) && doc.pricingTiers.length > 0;
+  const hasHosting = isWebsite && Array.isArray(doc.hostingTiers) && doc.hostingTiers.length > 0;
   const showPriceInBand = isWebsite && doc.price && !hasTiers;
   const showServices = isWebsite && doc.services && doc.services.length;
   const justPaid = urlParams.get('paid') === '1';
@@ -549,13 +564,24 @@ function renderDocument(doc) {
       </div>` : ''}
     </div>` : ''}
     ${hasTiers ? `
-    <div class="pricing-tiers">
+    <div class="pricing-tiers" data-billing="once">
       ${doc.pricingTiers.map((t, i) => `
       <div class="tier-card ${i === 1 ? 'featured' : ''}" data-tier="${i}" data-price="${Number(t.price)}">
         <div class="tier-name">${escapeHtml(t.name)}</div>
         <div class="tier-price" hidden>$${Number(t.price).toLocaleString()}</div>
         ${t.description ? `<div class="tier-desc">${escapeHtml(t.description)}</div>` : ''}
-        <button class="tier-btn" onclick="revealTierPrice(${i})">View Pricing</button>
+        <button class="tier-btn" onclick="revealTierPrice(this,'once',${i})">View Pricing</button>
+      </div>`).join('')}
+    </div>` : ''}
+    ${hasHosting ? `
+    <div class="tiers-heading">Ongoing Hosting &amp; Support</div>
+    <div class="pricing-tiers" data-billing="monthly">
+      ${doc.hostingTiers.map((t, i) => `
+      <div class="tier-card" data-tier="${i}" data-price="${Number(t.price)}">
+        <div class="tier-name">${escapeHtml(t.name)}</div>
+        <div class="tier-price" hidden>$${Number(t.price).toLocaleString()}<span class="tier-per">/mo</span></div>
+        ${t.description ? `<div class="tier-desc">${escapeHtml(t.description)}</div>` : ''}
+        <button class="tier-btn" onclick="revealTierPrice(this,'monthly',${i})">View Pricing</button>
       </div>`).join('')}
     </div>` : ''}`;
 
@@ -584,28 +610,26 @@ function renderDocument(doc) {
   }
 }
 
-function revealTierPrice(tierIndex) {
-  const card = document.querySelector(`.tier-card[data-tier="${tierIndex}"]`);
+function revealTierPrice(btnEl, billing, tierIndex) {
+  const card = btnEl.closest('.tier-card');
   if (!card) return;
   card.classList.add('revealed');
   card.querySelector('.tier-price').hidden = false;
-  const btn = card.querySelector('.tier-btn');
   const price = Number(card.dataset.price).toLocaleString();
-  btn.textContent = `Choose This — $${price}`;
-  btn.onclick = () => checkoutTier(tierIndex);
+  btnEl.textContent = billing === 'monthly' ? `Choose This — $${price}/mo` : `Choose This — $${price}`;
+  btnEl.onclick = () => checkoutTier(btnEl, billing, tierIndex);
 }
 
-async function checkoutTier(tierIndex) {
+async function checkoutTier(btnEl, billing, tierIndex) {
   const btns = document.querySelectorAll('.tier-btn');
   btns.forEach(b => { b.disabled = true; });
-  const clicked = event.target;
-  const originalText = clicked.textContent;
-  clicked.textContent = 'Starting checkout...';
+  const originalText = btnEl.textContent;
+  btnEl.textContent = 'Starting checkout...';
   try {
     const response = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ docId, tierIndex }),
+      body: JSON.stringify({ docId, tierIndex, billing }),
     });
     const result = await response.json();
     if (!response.ok || !result.success) throw new Error(result.error || 'Could not start checkout');
@@ -613,7 +637,7 @@ async function checkoutTier(tierIndex) {
   } catch (error) {
     alert(error.message || 'Something went wrong starting checkout.');
     btns.forEach(b => { b.disabled = false; });
-    clicked.textContent = originalText;
+    btnEl.textContent = originalText;
   }
 }
 
